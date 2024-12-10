@@ -1,6 +1,7 @@
 const userController = require("../Controllers/user.controller");
 const chatController = require("../Controllers/chat.controller");
 const roomController = require("../Controllers/room.controller");
+const e = require("express");
 
 module.exports = (io) => {
     io.on("connection", async(socket) => {
@@ -96,6 +97,19 @@ module.exports = (io) => {
             } catch(error) {
                 // 유저를 찾지 못한 경우 무시
                 console.log("Disconnect: User not found for socket", socket.id);
+            }
+            console.log("client is disconnected ", socket.id);
+        });
+
+        // disconnect 이벤트 핸들러 수정
+        socket.on("requestEmailAuth", async(email, cb) => {
+            try {
+                if (email) {
+                    console.log("requestEmailAuth ", email);
+                    cb({ok: true});
+                }
+            } catch(error) {
+                console.log("requestEmailAuth ", error);
             }
             console.log("client is disconnected ", socket.id);
         });

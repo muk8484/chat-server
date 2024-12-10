@@ -14,8 +14,8 @@ const io = new Server(httpServer, {
 
 require("./utils/io")(io);
 // 0.0.0.0으로 설정하여 모든 IP에서 접근 가능하도록 함
-httpServer.listen(process.env.PORT, "0.0.0.0", () => {
-    console.log("Server listening on port ", process.env.PORT);
+httpServer.listen(process.env.MONGO__PORT, "0.0.0.0", () => {
+    console.log("Server listening on port ", process.env.MONGO__PORT);
 });
 // httpServer.listen(process.env.PORT, () => {
 //     console.log("Server listening on port ", process.env.PORT);
