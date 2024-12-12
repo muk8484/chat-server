@@ -2,24 +2,30 @@ const userController = require("../Controllers/user.controller");
 const chatController = require("../Controllers/chat.controller");
 const roomController = require("../Controllers/room.controller");
 const e = require("express");
+const emailService = require("../Controllers/auth.controller");
 
 module.exports = (io) => {
     io.on("connection", async(socket) => {
         console.log("client is connected ", socket.id);
 
-
-        socket.on("login", async(userName, cb) => {
-            console.log("client login ", userName);
+        socket.on("login", async(email, authCode , cb) => {
+            console.log("client login request", email, authCode);
             // 유저정보 저장
             try{
-                const user = await userController.saveUser(userName, socket.id);
-                const welcomeMessage = {
-                    chat: `${user.name} is joined to this room`,
-                    user: {id: null, name: "system"},
+                const keyExists = await userController.checkAuthCode(email, authCode);
+                console.log("keyExists ", keyExists);
+                if(!keyExists.success){
+                    cb({ok:false, error:keyExists.message});
+                } else {
+                    const user = await userController.saveUser(email, socket.id);
+                    const welcomeMessage = {
+                        chat: `${user.name} is joined to this room`,
+                        user: {id: null, name: "system"},
+                    }
+                    console.log("client login ", welcomeMessage);
+                    io.emit("message", welcomeMessage);
+                    cb({ok:true, data:user});
                 }
-                console.log("client login ", welcomeMessage);
-                io.emit("message", welcomeMessage);
-                cb({ok:true, data:user});
             }catch(error){
                 cb({ok:false, error:error.message});
             }
@@ -101,11 +107,16 @@ module.exports = (io) => {
             console.log("client is disconnected ", socket.id);
         });
 
-        // disconnect 이벤트 핸들러 수정
+        // 이메일 인증 요청
         socket.on("requestEmailAuth", async(email, cb) => {
             try {
                 if (email) {
-                    console.log("requestEmailAuth ", email);
+                    const authCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    console.log("requestEmailAuth ", email + " " + authCode);
+                    // 6자리 인증 코드 생성
+
+                    // 이메일 발송
+                    await emailService.sendAuthEmail(email, authCode);
                     cb({ok: true});
                 }
             } catch(error) {
