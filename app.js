@@ -2,89 +2,38 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const cors = require("cors");
-const app = express();
-const { DatabaseSettings } = require('./common/settings');
+const { DatabaseSettings } = require('./common/settings').default;
+const { DatabaseConnection } = require('./common/database');
 const Redis = require("ioredis");
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: true,
-}));
+const app = express();
+app.use(cors());
 
-// 설정 초기화
-const dbSettings = new DatabaseSettings({
-  env: process.env.NODE_ENV || 'dev',
-  mongo: {
-      url: process.env.MONGO__URL,
-      db: process.env.MONGO__DB
-  },
-  redis: {
-      host: process.env.REDIS__HOST || 'host.docker.internal', // Docker 호스트 주소
-      port: process.env.REDIS__PORT,
-      db: process.env.REDIS__DB
-  }
-});
-
-// Redis 연결에 사용
-// const redisClient = redis.createClient({
-//     host: process.env.REDIS__HOST,
-//     port: process.env.REDIS__PORT,
-//     db: process.env.REDIS__DB
-// });
-// // Redis 연결 테스트
-// redisClient.on('connect', () => {
-//     console.log('Redis connected');
-// });
-
-// redisClient.on('error', (err) => {
-//   console.error('Redis connection error:', err);
-// });
-
-// REDIS__HOST="localhost"
-// REDIS__PORT=6379
-// REDIS__BASE_KEY="emojiChat"
-// REDIS__LOCK_EXPIRE_TIME=60
+const dbSettings = new DatabaseSettings();
 
 const redisClient = new Redis({
-  host: process.env.REDIS__HOST,
-  port: process.env.REDIS__PORT,
-  db: process.env.REDIS__DB || 0,
-  base_key: process.env.REDIS__BASE_KEY,
+  host: dbSettings.redis.host,
+  port: dbSettings.redis.port,
+  db: dbSettings.redis.db,
+  base_key: dbSettings.redis.base_key,
 });
-
-redisClient.set("testKey", "Hello, Redis!")
+// redis 연결 테스트
+redisClient.set("testKey", "Hello, Redis!!")
   .then(() => redisClient.get("testKey"))
   .then((result) => {
     console.log("Value:", result);
-    // redis.disconnect();
   })
   .catch((err) => console.error("Redis Error:", err));
 
-
-// WebSocket preflight 요청을 위한 OPTIONS 핸들러 추가
-// app.options('*', cors());
-
-// body parser 미들웨어
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// mongoose.connect(process.env.MONGO__URL, {
-//   useNewUrlParser: true, 
-//   useUnifiedTopology: true,
-// }).then(() => console.log("Connected to MongoDB"));
-// .catch((error) => console.log("Error connecting to MongoDB", error));
-
-mongoose.connect(process.env.MONGO__URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect(dbSettings.mongo.url, {
+  // useNewUrlParser: true,
+  // useUnifiedTopology: true,
   authSource: 'admin',
   user: 'rootuser',
   pass: 'rootpassword'
 })
 .then(() => console.log('MongoDB 연결 성공'))
 .catch(err => console.error('MongoDB 연결 실패:', err));
-
 
 //  임의로 룸을 만들어주기
 const Room = require("./Models/room");

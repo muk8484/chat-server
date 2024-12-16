@@ -7,7 +7,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors:{
         origin: "*",  // 모든 도메인에서 접근 허용
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "OPTIONS"],
         credentials: true,
     },
 });
