@@ -1,62 +1,46 @@
-const { trusted } = require("mongoose")
-const User = require("../Models/user")
+const userService = require('../Services/user.service');
+
 const userController = {}
-const { redisClient } = require('../app');
 
 userController.checkAuthCode = async(email, authCode)=>{
     console.log("checkAuthCode ", email, authCode);
-    try{
-        const redis_key = `${process.env.REDIS__BASE_KEY}_${email}_${authCode}`;
-
-        const keyExists = await redisClient.exists(redis_key);
-        if (!keyExists) {
-            console.log('인증코드가 존재하지 않거나 만료되었습니다.');
-            return {
-                success: false,
-                message: '인증코드가 존재하지 않거나 만료되었습니다.'
-            };
-        }
-        return {
-            success: true,
-            message: '인증 성공'
-        };
-
-    }catch(error){
-        throw new Error("auth code not found");
+    try {
+        const result = await userService.checkAuthCode(email, authCode);
+        return result;
+    } catch (error) {
+        console.error('Controller - 인증코드 확인 실패:', error);
+        throw error;
     }
 }
 
 userController.saveUser = async(userName, sid)=>{
-    let user = await User.findOne({ name : userName})
-    if(!user){
-        user = new User({
-            name: userName,
-            token: sid,
-            onLine: true,
-        });
+    try {
+        const user = await userService.saveUser(userName, sid);
+        return user;
+    } catch (error) {
+        console.error('Controller - 사용자 저장 실패:', error);
+        throw error;
     }
-    user.token = sid;
-    user.online = true;
-
-    await user.save();
-    return user;
 }
 
 userController.checkUser = async(sid) => {
-    const user = await User.findOne({ token: sid });
-    if(!user) throw new Error("user not found");
-    return user;
+    try {
+        const user = await userService.checkUser(sid);
+        return user;
+    } catch (error) {
+        console.error('Controller_checkUser - 사용자 확인 실패:', error);
+        throw error;
+    }
 }
 
 userController.logoutUser = async(sid) => {
-    const user = await User.findOne({ token: sid });
-    if(!user) throw new Error("user not found");
-    
-    // 유저 상태 업데이트
-    user.token = null;
-    user.online = false;
-    await user.save();
-    return user;
+    try {
+        const user = await userService.logoutUser(sid);
+        return user;
+    } catch (error) {
+        console.error('Controller_logoutUser - 사용자 확인 실패:', error);
+        throw error;
+    }
 }
 
 module.exports = userController

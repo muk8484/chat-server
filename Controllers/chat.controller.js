@@ -1,17 +1,15 @@
+const chatService = require('../Services/chat.service');
+
 const chatController = {}
-const Chat = require("../Models/chat")
 
 chatController.saveChat = async(message, user) => {
-    const newMessage = new Chat({
-        chat: message,
-        user: {
-            // user._id는 MongoDB가 자동으로 생성하는 고유한 ObjectId
-            id: user._id,
-            name: user.name,
-        }
-    });
-    await newMessage.save();
-    return newMessage;
+    try {
+        const newMessage = await chatService.saveChat(message, user);
+        return newMessage;
+    } catch (error) {
+        console.error('Controller_saveChat - 채팅 저장 실패:', error);
+        throw error;
+    }
 }
 
 module.exports = chatController;

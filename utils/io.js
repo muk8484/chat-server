@@ -1,8 +1,6 @@
 const userController = require("../Controllers/user.controller");
 const chatController = require("../Controllers/chat.controller");
-const roomController = require("../Controllers/room.controller");
-const e = require("express");
-const emailService = require("../Controllers/auth.controller");
+const authController = require("../Controllers/auth.controller");
 
 module.exports = (io) => {
     io.on("connection", async(socket) => {
@@ -46,25 +44,6 @@ module.exports = (io) => {
             }
         });
 
-        // socket.on("joinRoom", async (rid, cb) => {
-        //     try {
-        //       const user = await checkUser(socket.id); // 일단 유저정보들고오기
-        //       await roomController.joinRoom(rid, user); // 1~2작업
-        //       socket.join(user.room.toString());//3 작업
-        //       const welcomeMessage = {
-        //         chat: `${user.name} is joined to this room`,
-        //         user: { id: null, name: "system" },
-        //       };
-        //       io.to(user.room.toString()).emit("message", welcomeMessage);// 4 작업
-        //       io.emit("rooms", await roomController.getAllRooms());// 5 작업
-        //       cb({ ok: true });
-        //     } catch (error) {
-        //       cb({ ok: false, error: error.message });
-        //     }
-        //   });
-
-        // socket.emit("rooms", await roomController.getAllRooms());
-
         socket.on("logout", async(cb) => {
             try {
                 const user = await userController.logoutUser(socket.id);
@@ -92,13 +71,6 @@ module.exports = (io) => {
                     user.online = false;
                     user.token = null;
                     await user.save();
-                    
-                    // 시스템 메시지 전송
-                    // const disconnectMessage = {
-                    //     chat: `${user.name} has disconnected`,
-                    //     user: {id: null, name: "system"},
-                    // }
-                    // io.emit("message", disconnectMessage);
                 }
             } catch(error) {
                 // 유저를 찾지 못한 경우 무시
@@ -116,13 +88,12 @@ module.exports = (io) => {
                     // 6자리 인증 코드 생성
 
                     // 이메일 발송
-                    await emailService.sendAuthEmail(email, authCode);
+                    await authController.sendAuthEmail(email, authCode);
                     cb({ok: true});
                 }
             } catch(error) {
                 console.log("requestEmailAuth ", error);
             }
-            console.log("client is disconnected ", socket.id);
         });
     });
 };
